@@ -3,8 +3,8 @@
 clear variables
 close all
 %s = serialport("COM3",115200); %serial port COM+# to connect with robotic arm
-imdata = imread("circle.jpg");
-imdata = imresize(imdata,[130 NaN]);
+imdata = imread("star.jpg");
+imdata = imresize(imdata,[50 NaN]);
 imdata = im2bw(imdata);  %recommends imbinarize instead of im2bw
 imdata = ~imdata;
 
@@ -71,37 +71,35 @@ Y2 = num2str(Y2);
 %string concatenation to G-Code instruction
 %ZABC coordinate does not change, keep end effector vertically down
 %F2000 = speed 2000
-code1 = strcat('M20 G90 G01 X' , X1 , ' Y',  Y1 , ' Z140 A0.00 B0.00 C0.00 F2000.00');
-code2 = strcat('M20 G90 G01 X' , X2 , ' Y',  Y2 , ' Z140 A0.00 B0.00 C0.00 F2000.00');
-%write(s,'M3S500','char')
+code1 = strcat('M20 G90 G00 X' , X1 , ' Y',  Y1 , ' Z140 A0.00 B0.00 C0.00 F2000.00');
+code2 = strcat('M20 G90 G00 X' , X2 , ' Y',  Y2 , ' Z140 A0.00 B0.00 C0.00 F2000.00');
+
+%write(s,'M3S500','char') %Turn on the gripper
 %pause(1)
 %Write to robotic amr with zero coordinate G-Code instruction
-write(s,'M21 G90 G01 X0 Y0 Z0 A0 B0 C0 F2000','char')
-
-
-% find the right z coorindate
-
-
-
-
+%write(s,'M21 G90 G01 X0 Y0 Z0 A0 B0 C0 F2000','char')
 
 %Search for start
-
-for m=rowmax:1
+[rowmax,colmax]= size(half1);
+a = 0; b = 0;
+for m=rowmax:-1:1
     for n=1:colmax
         if half1(m,n)==1
-            %found start, to be simple assume all connected etc
-            break
-        end
-        if half1(a,b)==1
+            a = m;
+            b = n; %found start, to be simple assume all connected etc
             break
         end
     end
+    if half1(m,n)==1
+      a = m;
+      b = n;%found start, to be simple assume all connected etc
+    break    
+    end   
 end
 %a&b are our start
 %get the arm to a,b
-write(s, '','char') asdfasdfsdf %error tells where robot info is needed
-half1(m,n)=-1;           %-1 tells we already checked it
+%write(s, '','char') asdfasdfsdf %error tells where robot info is needed
+half1(a,b)=-1;           %-1 tells we already checked it
 
 %c is our completion check
 c=false;
@@ -114,20 +112,20 @@ c=false;
 
 
 
-e,f=recursion1(m,n,c)
+[e,f]=recursion1(a,b,c,half1,rowmax, colmax)
 c=false;
-g,h=recursion2(e,f,c)
+[g,h]=recursion2(e,f,c,half2,rowmax, colmax)
 
 
 %Put arm back at 0,0,0
-write(s,'M21 G90 G01 X0 Y0 Z0 A0 B0 C0 F2000','char')
+%write(s,'M21 G90 G01 X0 Y0 Z0 A0 B0 C0 F2000','char')
 
 
-end %need an end here so it doesn't go to the recursion now but images.m doesn't have a function ...
+%need an end here so it doesn't go to the recursion now but images.m doesn't have a function ...
 
 
 
-function [a,b] = recursion1(a,b,c)
+function [a,b] = recursion1(a,b,c,half1,rowmax, colmax)
 d=false;
 
 while d==false
@@ -188,16 +186,16 @@ end
 %break goes here
 
 while c==false
-    write(s, '','char') asdfasdfsdf %error tells where robot info is needed
+    %write(s, '','char') asdfasdfsdf %error tells where robot info is needed
     %pause(1)
     %tells arm to move
     half1(a,b)=-1;
-    recursion1(a,b,c)
+    recursion1(a,b,c,half1,rowmax, colmax);
 end
 %if c is true a and b stayed the same
 end
 
-function [a,b] = recursion2(a,b,c)
+function [a,b] = recursion2(a,b,c,half2,rowmax, colmax)
 d=false;
 
 while d==false
@@ -258,12 +256,11 @@ end
 %break goes here
 
 while c==false
-    write(s, '','char') asdfasdfsdf %error tells where robot info is needed
+    %write(s, '','char') asdfasdfsdf %error tells where robot info is needed
     %pause(1)
     %tells arm to move
     half2(a,b)=-1;
-    recursion2(a,b,c)
+    recursion2(a,b,c,half2,rowmax, colmax);
 end
 %if c is true a and b stayed the same
 end
-
